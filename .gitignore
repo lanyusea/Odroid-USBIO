@@ -15,3 +15,8 @@
 *.exe
 *.out
 *.app
+
+# mplabx intermediate files
+*.err
+*.i
+*/*/*/*/USB/*

@@ -41,6 +41,9 @@
   2.7b  Improvements to USBCBSendResume(), to make it easier to use.
   2.9f  Adding new part support
 ********************************************************************/
+// HK_USB_IO demo
+char version[] = "032";     // version major.minor.fix
+#include <usart.h>
 
 #ifndef MAIN_C
 #define MAIN_C
@@ -373,6 +376,7 @@ void YourHighPriorityISRCode();
 void YourLowPriorityISRCode();
 void USBCBSendResume(void);
 WORD_VAL ReadPOT(void);
+WORD_VAL ReadPOT1(void);    // HK USB_IO demo
 
 /** VECTOR REMAPPING ***********************************************/
 #if defined(__18CXX)
@@ -738,7 +742,7 @@ static void InitializeSystem(void)
             *((unsigned char*)0xFB5) = 0x90;  //Enable active clock tuning for USB operation
         #endif
         //Configure all I/O pins for digital mode (except RA0/AN0 which has POT on demo board)
-        ANSELA = 0x01;
+        ANSELA = 0x03;  // HK USB_IO demo  ra0 and ra1 are ADC
         ANSELB = 0x00;
         ANSELC = 0x00;
         ANSELD = 0x00;
@@ -883,8 +887,29 @@ void UserInit(void)
     //Initialize all of the push buttons
     mInitAllSwitches();
 
+    // HK USB_IO demo
+    // HK_GPIO default RD4,RD5=input, RD6,RD7=output
+    TRISDbits.TRISD4=1;       //HK set for input RD4
+    TRISDbits.TRISD5=1;       //HK set for input RD5
+    TRISDbits.TRISD6=0;       //HK set for output RD6
+    TRISDbits.TRISD7=0;       //HK set for output RD7
+#define gprd4   PORTDbits.RD4
+#define gprd5   PORTDbits.RD5
+#define gprd6   PORTDbits.RD6
+#define gprd7   PORTDbits.RD7
+
+Open1USART( USART_TX_INT_OFF &
+    USART_RX_INT_OFF &
+    USART_ASYNCH_MODE &
+    USART_EIGHT_BIT &
+    USART_CONT_RX &
+    USART_BRGH_HIGH &
+    USART_ADDEN_OFF,
+    77 );  // 48M / (64*9600) = spbrg+1 = 78.125, so spbrg = 77
+
     //Initialize I/O pin and ADC settings to collect potentiometer measurements
-    mInitPOT();
+    mInitPOT();   // adc on RDA0
+    mInitPOT1();  // HK USB_IO demo, adc on RDA1
     
     //initialize the variable holding the handle for the last
     // transmission
@@ -917,6 +942,8 @@ void UserInit(void)
  *******************************************************************/
 void ProcessIO(void)
 {   
+    char gpin;
+    int n;
     //Blink the LEDs according to the USB device status
     if(blinkStatusValid)
     {
@@ -970,7 +997,99 @@ void ProcessIO(void)
                     USBInHandle = HIDTxPacket(HID_EP,(BYTE*)&ToSendDataBuffer[0],64);
                 }
                 break;
-
+            case 0x82:  // Get input value for supplied pin#
+                // where [1] is pin:  1=gprd4,2=gprd5,3=gprd6,4=gprd7
+                if (!HIDTxHandleBusy(USBInHandle))
+                {
+                    ToSendDataBuffer[0] = 0x82; // echo cmd
+                    if (ReceivedDataBuffer[1] == 1) { gpin = gprd4; }
+                    if (ReceivedDataBuffer[1] == 2) { gpin = gprd5; }
+                    if (ReceivedDataBuffer[1] == 3) { gpin = gprd6; }
+                    if (ReceivedDataBuffer[1] == 4) { gpin = gprd7; }
+                    if (gpin == 1) { ToSendDataBuffer[1] = 0x01;}
+                    else           { ToSendDataBuffer[1] = 0;}
+                    ToSendDataBuffer[2] = 0;    // msb
+                    //Prepare the USB module to send the data packet to the host
+	            USBInHandle = HIDTxPacket(HID_EP,(BYTE*)&ToSendDataBuffer[0],64);
+                }
+                break;
+            case 0x83:  // ouptut a value on supplied pin#
+                if (ReceivedDataBuffer[2] == 1) { gpin = 1;}
+                else
+                if (ReceivedDataBuffer[2] == 0) { gpin = 0;}
+                else break;
+                switch (ReceivedDataBuffer[1]) {
+                    case 1: LATDbits.LATD4 = gpin;
+                    break;
+                    case 2: LATDbits.LATD5 = gpin;
+                    break;
+                    case 3: LATDbits.LATD6 = gpin;
+                    break;
+                    case 4: LATDbits.LATD7 = gpin;
+                    break;
+                    default: break;
+                }
+                break;
+            case 0x84:  // configure GPIO port direction, 1=input, 0=output
+                if (ReceivedDataBuffer[2] == 1) { gpin = 1;} // GPIO is input
+                else
+                if (ReceivedDataBuffer[2] == 0) { gpin = 0;} // GPIO is output
+                else break;
+                switch (ReceivedDataBuffer[1]) {
+                    case 1: TRISDbits.TRISD4 = gpin;
+                    break;
+                    case 2: TRISDbits.TRISD5 = gpin;
+                    break;
+                    case 3: TRISDbits.TRISD6 = gpin;
+                    break;
+                    case 4: TRISDbits.TRISD7 = gpin;
+                    break;
+                    default: break;
+                }
+                break;
+            case 0x85:  // return ROM version string to caller
+      	                if(!HIDTxHandleBusy(USBInHandle))
+	                {
+                            ToSendDataBuffer[0] = 0x85;   // echo back cmd
+                            ToSendDataBuffer[1] = version[0];
+                            ToSendDataBuffer[2] = version[1];
+                            ToSendDataBuffer[3] = version[2];
+                            USBInHandle = HIDTxPacket(HID_EP,(BYTE*)&ToSendDataBuffer[0],64);
+                        }
+                break;
+                           case 0x86: // send char string out UART
+            //    while (Busy1USART());  // Odd, puts adds extra chars
+            //    puts1USART((char *) &ReceivedDataBuffer[1]);
+                n=1;
+                do { while(Busy1USART());putc1USART(ReceivedDataBuffer[n]);n++;}
+                while (ReceivedDataBuffer[n]);
+                break;
+            case 0x87: // test if UART has char available to read
+                if(!HIDTxHandleBusy(USBInHandle))
+                {
+                    ToSendDataBuffer[0] = 0x87;  // echo back cmd
+                    if (DataRdy1USART()) { ToSendDataBuffer[1] = 1;}
+                    else { ToSendDataBuffer[1] = 0;}
+                    USBInHandle = HIDTxPacket(HID_EP,(BYTE*)&ToSendDataBuffer[0],64);
+                }
+                break;
+            case 0x88: // read a single char from UART
+                if(!HIDTxHandleBusy(USBInHandle))
+                {
+                    ToSendDataBuffer[0] = 0x88;  // echo back cmd
+                    if (DataRdy1USART()) {
+                        ToSendDataBuffer[1] = 1;
+                        ToSendDataBuffer[2] = Read1USART();
+                    } else {
+                        ToSendDataBuffer[1] = 0;  // no char was available
+                    }
+                    USBInHandle = HIDTxPacket(HID_EP,(BYTE*)&ToSendDataBuffer[0],64);
+                }
+                break;
+            case 0x89:  // send a single char to UART
+                 // while (Busy1USART());
+                 Write1USART(ReceivedDataBuffer[1]);
+                break;
             case 0x37:	//Read POT command.  Uses ADC to measure an analog voltage on one of the ANxx I/O pins, and returns the result to the host
                 {
                     WORD_VAL w;
@@ -1094,6 +1213,18 @@ void ProcessIO(void)
  *
  * Note:            None
  *****************************************************************************/
+// HK USB_IO demo, new routine to read RA1  ADC
+WORD_VAL ReadPOT1(void)  // adds another ADC channel on RA1
+{
+    WORD_VAL wv;
+    wv.Val = 0;
+        ADCON0bits.GO = 1;              // Start AD conversion
+            while(ADCON0bits.GO);     // Wait for conversion
+            wv.v[0] = ADRESL;
+            wv.v[1] = ADRESH;
+    return wv;
+} // end ReadPOT1
+
 WORD_VAL ReadPOT(void)
 {
     WORD_VAL w;

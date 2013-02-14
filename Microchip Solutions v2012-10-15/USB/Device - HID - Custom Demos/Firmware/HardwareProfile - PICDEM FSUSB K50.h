@@ -9,7 +9,7 @@
  Software License Agreement:
 
  The software supplied herewith by Microchip Technology Incorporated
- (the "Company") for its PIC® Microcontroller is intended and
+ (the "Company") for its PICï¿½ Microcontroller is intended and
  supplied to you, the Company's customer, for use solely and
  exclusively on Microchip PIC Microcontroller products. The
  software is owned by the Company and/or its supplier, and is
@@ -160,6 +160,7 @@
     
     /** POT ************************************************************/
     #define mInitPOT()          {TRISAbits.TRISA0=1;ANSELAbits.ANSA0=1;ADCON1=0;ADCON2=0xBE;ADCON0=0x01;}
+    #define mInitPOT1()         {TRISAbits.TRISA0=1;ANSELAbits.ANSA0=1;ADCON1=0;ADCON2=0xBE;ADCON0=0x01;}
 
    
     /** I/O pin definitions ********************************************/
