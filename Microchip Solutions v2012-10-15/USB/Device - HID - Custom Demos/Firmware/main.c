@@ -1110,7 +1110,21 @@ void ProcessIO(void)
 	                }					
                 }
                 break;
-
+            case 0x38:	//Read RDA1 ADC value
+                {
+                    WORD_VAL wv;
+                        ADCON0=0x05;  // 0001 in CHS bits select A1 pin for ADC input channel [0001 01]
+                        if(!HIDTxHandleBusy(USBInHandle))
+	                {
+                            wv = ReadPOT1();                 //Use ADC to read the I/O pin voltage.  See the relevant HardwareProfile - xxxxx.h file for the I/O pin that it will measure.
+                            ToSendDataBuffer[0] = 0x38;      //Echo back to the host the command we are fulfilling in the first byte.  In this case, the Read POT (analog voltage) command.
+                            ToSendDataBuffer[1] = wv.v[0];   //Measured analog voltage LSB
+                            ToSendDataBuffer[2] = wv.v[1];   //Measured analog voltage MSB
+                            //Prepare the USB module to send the data packet to the host
+                            USBInHandle = HIDTxPacket(HID_EP,(BYTE*)&ToSendDataBuffer[0],64);
+	                }
+                }
+                break;
 #if defined(HARDKERNEL_PIC18F45K50)
             case 0x98: //- Get Register
                 {
