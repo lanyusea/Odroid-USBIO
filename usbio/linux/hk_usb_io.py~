@@ -4,9 +4,7 @@ import usb.util
 from array import array
 import sys
 import time
-# This version is under heavy development and will be converted fully into a module
-# that will be externally callable.  For now add your test code to the bottom
-# below the === end of module statement
+
 _mod_ver  = '0.1'		# python HKUSBIO module version
 _mod_date = '2/13/2013'	# module date
 u_ad0 = 0x37	# read ADC value from RA0
