@@ -8,7 +8,7 @@ import time
 # that will be externally callable.  For now add your test code to the bottom
 # below the === end of module statement
 # ---- This version is testing HK's addtion of SFR control
-_mod_ver  = '0.21'	# python HKUSBIO module version
+_mod_ver  = '0.22'	# python HKUSBIO module version
 _mod_date = '2/15/2013'	# module date
 u_ad0 = 0x37	# read ADC value from RA0
 u_ad1 = 0x38	# read ADC value from RA1
@@ -81,7 +81,7 @@ def adc_ra0(dev):			# do ADC conversion on RA0
 	value = ret[2] << 8
 	value = value | ret[1]
 	return value
-def adc_ra1(dev):			# do ADC conversion on RA0
+def adc_ra1(dev):			# do ADC conversion on RA1
 	dev.write(1,[u_ad1], 0, 100)
 	ret = dev.read(0x81, 64, 0, 100)
 	value = ret[2] << 8
@@ -142,7 +142,7 @@ def close(dev):				# reset USB device
 #===================== end of module =========
 usb = init()			# init the USB IO board
 
-print module_version()
+print module_version()		# print python module version
 
 print rom_version(usb)		# print rom version
 
