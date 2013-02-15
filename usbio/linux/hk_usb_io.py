@@ -127,7 +127,7 @@ def sfr_get_regbit(dev, reg, bval):	# get a SFR register bit
 	dev.write(1, a, 0, 100)
 	ret = dev.read(0x81, 64, 0, 100)
 	return ret[1]
-def sfr_set_regbit(dev):			# set a SFR register bit
+def sfr_set_regbit(dev, reg, rbit, bval):# set a SFR register bit
 	a = array('B',[0,0,0,0,0,0,0,0,0,0,0,0,0,0])
 	a[10] = reg						# register to select
 	a[11] = rbit					# bit to set
