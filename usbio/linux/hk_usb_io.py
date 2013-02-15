@@ -7,8 +7,9 @@ import time
 # This version is under heavy development and will be converted fully into a module
 # that will be externally callable.  For now add your test code to the bottom
 # below the === end of module statement
-_mod_ver  = '0.1'		# python HKUSBIO module version
-_mod_date = '2/13/2013'	# module date
+# ---- This version is testing HK's addtion of SFR control
+_mod_ver  = '0.2'		# python HKUSBIO module version
+_mod_date = '2/14/2013'	# module date
 u_ad0 = 0x37	# read ADC value from RA0
 u_ad1 = 0x38	# read ADC value from RA1
 u_rom = 0x85	# get PIC rom version
@@ -21,6 +22,10 @@ u_uss = 0x86	# send a string to the UART
 u_tst = 0x87	# test if UART has a char available
 u_urc = 0x88	# read a single char from UART
 u_usc = 0x89	# send a single char to the UART
+h_getr = 0x98	# SFR register to read
+h_setr = 0x99	# SFR register to set
+h_getb = 0x9a	# SFR read register bit
+h_setb = 0x9b	# SFR set register bit
 rd4 = 1		# GPIO pin rd4	def=input
 rd5 = 2		# GPIO pin rd5	def=input
 rd6 = 3		# GPIO pin rd6	def=output
@@ -99,6 +104,38 @@ def ser_getc(dev):					# get a single char from the serial port
 	dev.write(1, [u_urc], 0, 100)
 	ret = dev.read(0x81, 64, 0, 100)
 	return ret[1]
+def sfr_get_reg(dev, reg):			# get a SFR register
+	a = array('B',[0,0,0,0,0,0,0,0,0,0,0,0,0,0])
+	a[10] = reg
+	a.insert(0, h_getr)
+	dev.write(1, a, 0, 100)
+	ret = dev.read(0x81, 64, 0, 100)
+	return ret[1]
+def sfr_set_reg(dev, reg, rval):	# set a SFR register
+	a = array('B',[0,0,0,0,0,0,0,0,0,0,0,0,0,0])
+	a[10] = reg						# register to select
+	a[11] = rval					# value to set
+	a.insert(0, h_setr)
+	dev.write(1, a, 0, 100)
+	ret = dev.read(0x81, 64, 0, 100)
+	return ret[1]
+def sfr_get_regbit(dev, reg, bval):	# get a SFR register bit
+	a = array('B',[0,0,0,0,0,0,0,0,0,0,0,0,0,0])
+	a[10] = reg						# register to select
+	a[11] = bval					# bit value to set
+	a.insert(0, h_getb)
+	dev.write(1, a, 0, 100)
+	ret = dev.read(0x81, 64, 0, 100)
+	return ret[1]
+def sfr_set_regbit(dev):			# set a SFR register bit
+	a = array('B',[0,0,0,0,0,0,0,0,0,0,0,0,0,0])
+	a[10] = reg						# register to select
+	a[11] = rbit					# bit to set
+	a[12] = bval					# bit value to set
+	a.insert(0, h_setb)
+	dev.write(1, a, 0, 100)
+	ret = dev.read(0x81, 64, 0, 100)
+	return ret[1]
 def close(dev):						# reset USB device
 	dev.reset()
 
@@ -135,5 +172,8 @@ if (ser_test(usb)):		# check if incoming char on UART
 	print a
 else:
 	print "no"
+
+a = sfr_get_reg(usb, 0x8b)	# not sure this is working only get zero's back
+print a
 
 close(usb)

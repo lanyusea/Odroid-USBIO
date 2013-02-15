@@ -1057,7 +1057,7 @@ void ProcessIO(void)
                             USBInHandle = HIDTxPacket(HID_EP,(BYTE*)&ToSendDataBuffer[0],64);
                         }
                 break;
-                           case 0x86: // send char string out UART
+            case 0x86: // send char string out UART
             //    while (Busy1USART());  // Odd, puts adds extra chars
             //    puts1USART((char *) &ReceivedDataBuffer[1]);
                 n=1;
@@ -1138,7 +1138,7 @@ void ProcessIO(void)
 	                {
 						ToSendDataBuffer[0] = 0x98;
 						ToSendDataBuffer[1] = re_val;
-
+                                                
 	                    USBInHandle = HIDTxPacket(HID_EP,(BYTE*)&ToSendDataBuffer[0],64);
 	                }					
 				}
