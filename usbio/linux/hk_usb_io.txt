@@ -1,0 +1,12 @@
+This python module uses: pyusb
+
+To use this python module follow these instructions:
+
+On Ubuntu:
+(1) first remove any old python-usb package (we will use the pyusb-1 package)
+$ sudo apt-get remove python-usb
+
+(2) download and install pyusb-1 http://sourceforge.net/projects/pyusb/files/PyUSB%201.0/
+$ tar -xvf pyusb-1.0.0a3.tar.gz
+$ cd pyusb-1.0.0a3
+$ sudo python setup.py install
