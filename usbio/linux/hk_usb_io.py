@@ -8,8 +8,8 @@ import time
 # that will be externally callable.  For now add your test code to the bottom
 # below the === end of module statement
 # ---- This version is testing HK's addtion of SFR control
-_mod_ver  = '0.2'		# python HKUSBIO module version
-_mod_date = '2/14/2013'	# module date
+_mod_ver  = '0.21'	# python HKUSBIO module version
+_mod_date = '2/15/2013'	# module date
 u_ad0 = 0x37	# read ADC value from RA0
 u_ad1 = 0x38	# read ADC value from RA1
 u_rom = 0x85	# get PIC rom version
@@ -32,7 +32,7 @@ rd6 = 3		# GPIO pin rd6	def=output
 rd7 = 4		# GPIO pin rd7	def=output
 dir_output = 0	# control GPIO pin direction
 dir_input  = 1
-def init():							# setup USB device structure
+def init():				# setup USB device structure
 	# find our device
 	dev = usb.core.find(idVendor=0x04d8, idProduct=0x003f)
 	# was it found
@@ -48,7 +48,7 @@ def init():							# setup USB device structure
 def module_version():
 	a = 'Version: ' + _mod_ver + ', Date: ' + _mod_date
 	return a
-def rom_version(dev):				# get PIC ROM version
+def rom_version(dev):			# get PIC ROM version
 	# read ROM version 
 	dev.write(1, [u_rom], 0, 100)
 	ret = dev.read(0x81, 64, 0, 100)
@@ -58,9 +58,9 @@ def rom_version(dev):				# get PIC ROM version
 	rom_version += chr(ret[2])
 	rom_version += chr(ret[3])
 	return rom_version
-def toggle_led(dev):				# toggle LED
+def toggle_led(dev):			# toggle LED
 	dev.write(1, [u_led], 0, 100)
-def read_switch(dev):				# read switch press
+def read_switch(dev):			# read switch press
 	dev.write(1, [u_swc], 0, 100)
 	sw = dev.read(0x81, 64, 0, 100)
 	if (sw[1] == 0):
@@ -69,42 +69,42 @@ def read_switch(dev):				# read switch press
 		 return False
 def gpio_init(dev,pin,pdir):		# set GPIO direction on pin
 	dev.write(1,[u_gpd, pin, pdir], 0, 100)
-def gpio_out(dev,pin):				# otuput a value on GPIO pin
+def gpio_out(dev,pin):			# otuput a value on GPIO pin
 	dev.write(1, [u_gpo, pin, 1], 0, 100)
-def gpio_in(dev,pin):				# read value on GPIO pin
+def gpio_in(dev,pin):			# read value on GPIO pin
 	dev.write(1,[u_gpi, pin], 0, 100)
 	ret = dev.read(0x81, 64, 0, 100)
 	return ret[1]
-def adc_ra0(dev):					# do ADC conversion on RA0
+def adc_ra0(dev):			# do ADC conversion on RA0
 	dev.write(1,[u_ad0], 0, 100)
 	ret = dev.read(0x81, 64, 0, 100)
 	value = ret[2] << 8
 	value = value | ret[1]
 	return value
-def adc_ra1(dev):					# do ADC conversion on RA0
+def adc_ra1(dev):			# do ADC conversion on RA0
 	dev.write(1,[u_ad1], 0, 100)
 	ret = dev.read(0x81, 64, 0, 100)
 	value = ret[2] << 8
 	value = value | ret[1]
 	return value
-def ser_test(dev):					# check if a char available on serial port
+def ser_test(dev):			# check if a char available on serial port
 	dev.write(1, [u_tst], 0, 100)
 	ret = dev.read(0x81, 64, 0, 100)
 	return ret[1]
-def ser_putc(dev,schar):			# send a char to the serial port
+def ser_putc(dev,schar):		# send a char to the serial port
 	a = map( ord, schar)
 	a.insert(0, u_usc)
 	dev.write(1, a, 0, 100)
-def ser_puts(dev, strval):			# send a string to the serial port
+def ser_puts(dev, strval):		# send a string to the serial port
 	a = map( ord, strval)
 	a.insert(0, u_uss)
 	a.append(0)
 	dev.write(1, a, 0, 100)
-def ser_getc(dev):					# get a single char from the serial port
+def ser_getc(dev):			# get a single char from the serial port
 	dev.write(1, [u_urc], 0, 100)
 	ret = dev.read(0x81, 64, 0, 100)
 	return ret[1]
-def sfr_get_reg(dev, reg):			# get a SFR register
+def sfr_get_reg(dev, reg):		# get a SFR register
 	a = array('B',[0,0,0,0,0,0,0,0,0,0,0,0,0,0])
 	a[10] = reg
 	a.insert(0, h_getr)
@@ -113,30 +113,30 @@ def sfr_get_reg(dev, reg):			# get a SFR register
 	return ret[1]
 def sfr_set_reg(dev, reg, rval):	# set a SFR register
 	a = array('B',[0,0,0,0,0,0,0,0,0,0,0,0,0,0])
-	a[10] = reg						# register to select
-	a[11] = rval					# value to set
+	a[10] = reg			# register to select
+	a[11] = rval			# value to set
 	a.insert(0, h_setr)
 	dev.write(1, a, 0, 100)
 	ret = dev.read(0x81, 64, 0, 100)
 	return ret[1]
 def sfr_get_regbit(dev, reg, bval):	# get a SFR register bit
 	a = array('B',[0,0,0,0,0,0,0,0,0,0,0,0,0,0])
-	a[10] = reg						# register to select
-	a[11] = bval					# bit value to set
+	a[10] = reg			# register to select
+	a[11] = bval			# bit value to get
 	a.insert(0, h_getb)
 	dev.write(1, a, 0, 100)
 	ret = dev.read(0x81, 64, 0, 100)
 	return ret[1]
-def sfr_set_regbit(dev, reg, rbit, bval):# set a SFR register bit
+def sfr_set_regbit(dev, reg, rbit, bval):	# set a SFR register bit
 	a = array('B',[0,0,0,0,0,0,0,0,0,0,0,0,0,0])
-	a[10] = reg						# register to select
-	a[11] = rbit					# bit to set
-	a[12] = bval					# bit value to set
+	a[10] = reg			# register to select
+	a[11] = rbit			# bit to set
+	a[12] = bval			# bit value to set
 	a.insert(0, h_setb)
 	dev.write(1, a, 0, 100)
 	ret = dev.read(0x81, 64, 0, 100)
 	return ret[1]
-def close(dev):						# reset USB device
+def close(dev):				# reset USB device
 	dev.reset()
 
 #===================== end of module =========
@@ -159,19 +159,19 @@ a = adc_ra1(usb)		# do ADC conversion on pin RA1
 print a
 
 # LCD on serial port (UART IO to a serial attached LCD)
-ser_putc(usb,chr(0xfe))		# clear LCD screen
-ser_putc(usb,chr(0x01))	
-ser_putc(usb,chr(0xfe))		# block cursor
-ser_putc(usb,chr(0x0d))
-ser_puts(usb,"Hello World")
-ser_puts(usb,chr(0xfe) + chr(192))	# move to next line
-ser_puts(usb,"From Odroid-x2")
+#ser_putc(usb,chr(0xfe))		# clear LCD screen
+#ser_putc(usb,chr(0x01))	
+#ser_putc(usb,chr(0xfe))		# block cursor
+#ser_putc(usb,chr(0x0d))
+#ser_puts(usb,"Hello World")
+#ser_puts(usb,chr(0xfe) + chr(192))	# move to next line
+#ser_puts(usb,"From Odroid-x2")
 
-if (ser_test(usb)):		# check if incoming char on UART
-	a = ser_getc(usb)
-	print a
-else:
-	print "no"
+#if (ser_test(usb)):		# check if incoming char on UART
+#	a = ser_getc(usb)
+#	print a
+#else:
+#	print "no"
 
 a = sfr_get_reg(usb, 0x8b)	# not sure this is working only get zero's back
 print a
