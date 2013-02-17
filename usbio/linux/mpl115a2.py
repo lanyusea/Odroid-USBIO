@@ -1,0 +1,121 @@
+#!/usr/bin/python
+from hk_usb_io import *
+import sys
+import time
+
+usb = init()			# init the USB IO board
+
+print module_version()		# print python module version
+
+print rom_version(usb)		# print rom version
+print "---------- output -----------"
+
+#toggle_led(usb)			# toggle the LED
+
+#a = read_switch(usb)		# read the switch status
+#print a
+
+#gpio_init(usb,rd7,dir_input)	# configure gpio RD7 as input
+#a = gpio_in(usb,rd7)		# read the GPIO pin RD7
+#print a
+
+#a = adc_ra1(usb)		# do ADC conversion on pin RA1
+#print a
+
+# LCD on serial port (UART IO to a serial attached LCD)
+#ser_putc(usb,chr(0xfe))		# clear LCD screen
+#ser_putc(usb,chr(0x01))	
+#ser_putc(usb,chr(0xfe))		# block cursor
+#ser_putc(usb,chr(0x0d))
+#ser_puts(usb,"Hello World")
+#ser_puts(usb,chr(0xfe) + chr(192))	# move to next line
+#ser_puts(usb,"From Odroid-x2")
+
+#if (ser_test(usb)):		# check if incoming char on UART
+#	a = ser_getc(usb)
+#	print a
+#else:
+#	print "no"
+
+#a = sfr_get_reg(usb, 0x8b)	# not sure this is working only get zero's back
+#print a
+
+#====== MPL115A2 pressure/temp sensor
+MPL115A2_ADDRESS = 0x60
+MPL115A2_REGISTER_PRESSURE_MSB = 0x00
+MPL115A2_REGISTER_PRESSURE_LSB = 0x01
+MPL115A2_REGISTER_TEMP_MSB = 0x02
+MPL115A2_REGISTER_TEMP_LSB = 0x03
+MPL115A2_REGISTER_A0_COEFF_MSB = 0x04
+MPL115A2_REGISTER_A0_COEFF_LSB = 0x05
+MPL115A2_REGISTER_B1_COEFF_MSB = 0x06
+MPL115A2_REGISTER_B1_COEFF_LSB = 0x07
+MPL115A2_REGISTER_B2_COEFF_MSB = 0x08
+MPL115A2_REGISTER_B2_COEFF_LSB = 0x09
+MPL115A2_REGISTER_C12_COEFF_MSB = 0x0A
+MPL115A2_REGISTER_C12_COEFF_LSB = 0x0B
+MPL115A2_REGISTER_STARTCONVERSION = 0x12
+# read coeff: [0xC0], [0x04], [0xC1], [0x3E], [0xCE],
+#     [0xB3], [0xF9], [0xC5], [0x17], [0x33], [0xC8]
+# start i2c
+i2c_init(usb)
+# start i2c transmission
+i2c_start(usb, I2C_START_CMD)
+# write MPL115A2 control byte
+i2c_write(usb, (MPL115A2_ADDRESS << 1) | I2C_WRITE_CMD)
+# coeff request
+i2c_write(usb, MPL115A2_REGISTER_A0_COEFF_MSB)
+# restart i2c_transmission
+i2c_start(usb, I2C_REP_START_CMD)
+# get some data
+i2c_write(usb, (MPL115A2_ADDRESS << 1) |I2C_READ_CMD)
+coeff = array('i',[0,0,0,0,0,0,0,0,0,0,0,0,0,0])
+scoeff = array('i',[0,0,0,0,0,0,0,0,0,0,0,0,0,0])
+for x in range (1,5):
+	dataMSB = i2c_read(usb)
+	i2c_master_ack(usb, I2C_DATA_ACK)
+	dataLSB = i2c_read(usb)
+	i2c_master_ack(usb, I2C_DATA_ACK)
+	coeff[x] = dataMSB << 8 | dataLSB
+	scoeff[x] = coeff[x]
+test = i2c_read(usb)	# PIC usb stops if we don't read one more byte
+mpl_a0 = float(coeff[1]) / 8
+mpl_b1 = float(coeff[2]) / 8182
+mpl_b2 = float(coeff[3]) / 16384
+mpl_c12 = float(coeff[4])
+mpl_c12 /= 4194304.0
+# per data sheet should have some 0xBE0A like negative numbers
+# need to figure out how to test for those
+print mpl_a0, mpl_b1, mpl_b2, mpl_c12
+i2c_start(usb, I2C_START_CMD)
+i2c_write(usb, (MPL115A2_ADDRESS << 1) | I2C_WRITE_CMD)
+i2c_write(usb, MPL115A2_REGISTER_STARTCONVERSION) 
+i2c_write(usb, MPL115A2_REGISTER_PRESSURE_MSB) 
+time.sleep(1)	# delay (only needs 5ms but this will do for now
+i2c_start(usb, I2C_START_CMD)
+i2c_write(usb, (MPL115A2_ADDRESS << 1) | I2C_WRITE_CMD)
+i2c_write(usb, MPL115A2_REGISTER_PRESSURE_MSB) 
+i2c_start(usb, I2C_REP_START_CMD)
+i2c_write(usb, (MPL115A2_ADDRESS << 1) |I2C_READ_CMD)
+
+pressMSB = i2c_read(usb) 
+i2c_master_ack(usb, I2C_DATA_ACK)
+pressLSB = i2c_read(usb) 
+i2c_master_ack(usb, I2C_DATA_ACK)
+tempMSB  = i2c_read(usb) 
+i2c_master_ack(usb, I2C_DATA_ACK)
+tempLSB  = i2c_read(usb) 
+
+press = pressMSB << 8 | pressLSB >> 6
+temp  = tempMSB << 8 | tempLSB >> 6
+print "temperature: %X, %X, MSB|LSB: %X" %(tempMSB, tempLSB, temp)
+print "   pressure: %X, %X, MSB|LSB: %X" %(pressMSB, pressLSB, press)
+# Below is from arduino sketch, not working yet
+rtemp = (float(temp) - 498.0) / -5.35 + 25.0
+print "Bogus temp value for now: %f" % (rtemp)
+
+i2c_master_ack(usb, I2C_DATA_NOACK)
+i2c_stop(usb)
+
+
+close(usb)

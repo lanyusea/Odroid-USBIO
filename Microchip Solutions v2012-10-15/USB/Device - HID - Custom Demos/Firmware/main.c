@@ -41,9 +41,7 @@
   2.7b  Improvements to USBCBSendResume(), to make it easier to use.
   2.9f  Adding new part support
 ********************************************************************/
-// HK_USB_IO demo
-char version[] = "032";     // version major.minor.fix
-#include <usart.h>
+#include <usart.h>      // hk_usb_io
 
 #ifndef MAIN_C
 #define MAIN_C
@@ -353,8 +351,14 @@ char version[] = "032";     // version major.minor.fix
     #define TX_DATA_BUFFER_ADDRESS
 #endif
 
-unsigned char ReceivedDataBuffer[64] RX_DATA_BUFFER_ADDRESS;
-unsigned char ToSendDataBuffer[64] TX_DATA_BUFFER_ADDRESS;
+#define BSIZE  80      // hk_usb_io
+unsigned char ReceivedDataBuffer[BSIZE] RX_DATA_BUFFER_ADDRESS;
+unsigned char ToSendDataBuffer[BSIZE] TX_DATA_BUFFER_ADDRESS;
+unsigned char I2C_Send[BSIZE];     // I2C buffers  HK_USB_IO
+// HK_USB_IO demo
+char version[] = "040";     // version major.minor.fix
+// revisions:  031   first release:  gpio, adc, serial
+// 040:  i2c
 
 #if defined(__18CXX)
 #pragma udata
@@ -377,6 +381,15 @@ void YourLowPriorityISRCode();
 void USBCBSendResume(void);
 WORD_VAL ReadPOT(void);
 WORD_VAL ReadPOT1(void);    // HK USB_IO demo
+void i2c_init(void);
+void i2c_idle(void);
+void i2c_start(unsigned char);
+void i2c_stop(void);
+unsigned char i2c_slave_ack(void);
+void i2c_write(unsigned char);
+void i2c_master_ack(unsigned char);
+unsigned char i2c_read(void);
+unsigned char i2c_isdatardy(void);
 
 /** VECTOR REMAPPING ***********************************************/
 #if defined(__18CXX)
@@ -943,6 +956,7 @@ Open1USART( USART_TX_INT_OFF &
 void ProcessIO(void)
 {   
     char gpin;
+    unsigned char *tbuf;
     int n;
     //Blink the LEDs according to the USB device status
     if(blinkStatusValid)
@@ -961,6 +975,45 @@ void ProcessIO(void)
         //application software wants us to fulfill.
         switch(ReceivedDataBuffer[0])				//Look at the data the host sent, to see what kind of application specific command it sent.
         {
+            case 0x40:  // void i2c_init(void)
+                i2c_init();
+                break;
+            case 0x41:  // void i2c_idle(void)
+                i2c_idle();
+                break;
+            case 0x42:  // void i2c_start(uchar)
+                i2c_start(ReceivedDataBuffer[1]);   // I2C_START_CMD or other for restart_i2c
+                break;
+            case 0x43:  // void i2c_stop(void)
+                i2c_stop();
+                break;
+            case 0x44:  // unsigned char  i2c_slave_ack(void)
+                ToSendDataBuffer[1] = i2c_slave_ack(); // 1=no ack, 0=ack
+                ToSendDataBuffer[0] = 0x44;     // echo back cmd
+                if(!HIDTxHandleBusy(USBInHandle)) {
+                    USBInHandle = HIDTxPacket(HID_EP,(BYTE*)&ToSendDataBuffer[0],64);
+                }
+                break;
+            case 0x45:  // void i2c_write(unsigned char data)
+                i2c_write(ReceivedDataBuffer[1]);
+                break;
+            case 0x46:  // void i2c_master_ack(unsigned char ack_type)
+                i2c_master_ack(ReceivedDataBuffer[1]); // 1=nack,0=ack
+                break;
+            case 0x47:  // unsigned char i2c_read(void)
+                ToSendDataBuffer[1] = i2c_read();
+                ToSendDataBuffer[0] = 0x47;
+                if(!HIDTxHandleBusy(USBInHandle)) {
+                    USBInHandle = HIDTxPacket(HID_EP,(BYTE*)&ToSendDataBuffer[0],64);
+                }
+                break;
+            case 0x48:  // unsigned char i2c_isdatardy(void)
+                ToSendDataBuffer[1] = i2c_isdatardy();
+                ToSendDataBuffer[0] = 0x48;
+                if(!HIDTxHandleBusy(USBInHandle)) {
+                    USBInHandle = HIDTxPacket(HID_EP,(BYTE*)&ToSendDataBuffer[0],64);
+                }
+                break;
             case 0x80:  //Toggle LEDs command
 		        blinkStatusValid = FALSE;			//Stop blinking the LEDs automatically, going to manually control them now.
                 if(mGetLED_1() == mGetLED_2())
@@ -1337,6 +1390,100 @@ WORD_VAL ReadPOT(void)
     return w;
 }//end ReadPOT
 
+/********************************************************************/
+/* I2C routines */
+// I2C Bus Control Definition
+#define I2C_DATA_ACK 0
+#define I2C_DATA_NOACK 1
+#define I2C_WRITE_CMD 0
+#define I2C_READ_CMD 1
+
+#define I2C_START_CMD 0
+#define I2C_REP_START_CMD 1
+#define I2C_REQ_ACK 0
+#define I2C_REQ_NOACK 0
+void i2c_init(void) {
+    TRISBbits.TRISB0 = 1;  //ports RB0=sda, RB1=scl are input
+    TRISBbits.TRISB1 = 1;
+  // Initialize the PIC18F45K50 MSSP Peripheral I2C Master Mode (100khz = 0x77)
+  // SSPADD + 1 = 48m/(400k*4) = 30 so SPPADD=29 or 0x1D
+                                // for 100k @ 48mhz = 0x77  (119)
+  //SSP1STAT = 0x80;      // Slew Rate is disable for 100 kHz mode
+  //SSP1CON1 = 0x28;      // Enable SDA and SCL, I2C Master mode, clock = FOSC/(4 * (SSPADD + 1))
+  //SSP1CON2 = 0x00;      // Reset MSSP Control Register
+    SSP1STAT &= 0x3f;     // ==== possibly these are better for our PIC
+    SSP1CON1 = 0x00;
+    SSP1CON2 = 0x00;
+    SSP1CON1 |= 0x08;
+    SSP1STAT |= 0x80;
+    SSP1CON1 |= 0x20;      // ==== if not can revert to above 3 commented out
+  SSP1ADD = 0x77;       // 100 kHz
+  PIR1bits.SSPIF=0;    // Clear MSSP Interrupt Flag
+}
+
+void i2c_idle(void)
+{
+  // Wait I2C Bus and Status Idle (i.e. ACKEN, RCEN, PEN, RSEN, SEN)
+  while (( SSP1CON2 & 0x1F ) || ( SSP1STATbits.R_NOT_W));
+}
+
+void i2c_start(unsigned char stype)
+{
+  i2c_idle();                     // Ensure the I2C module is idle
+  if (stype == I2C_START_CMD) {
+    SSP1CON2bits.SEN = 1;          // Start I2C Transmission
+    while(SSP1CON2bits.SEN);
+  } else {
+    SSP1CON2bits.RSEN = 1;         // ReStart I2C Transmission
+    while(SSP1CON2bits.RSEN);
+  }
+}
+
+void i2c_stop(void)
+{
+  // Stop I2C Transmission
+  SSP1CON2bits.PEN = 1;
+  while(SSP1CON2bits.PEN);
+}
+unsigned char i2c_slave_ack(void)
+{
+  // Return: 1 = Acknowledge was not received from slave
+  //         0 = Acknowledge was received from slave
+  return(SSP1CON2bits.ACKSTAT);
+}
+
+void i2c_write(unsigned char data)
+{
+  // Send the Data to I2C Bus
+  SSP1BUF = data;
+  if (SSP1CON1bits.WCOL)         // Check for write collision
+    return;
+  while(SSP1STATbits.BF);        // Wait until write cycle is complete
+  i2c_idle();                   // Ensure the I2C module is idle
+}
+
+void i2c_master_ack(unsigned char ack_type)
+{
+  SSP1CON2bits.ACKDT = ack_type;   // 1 = Not Acknowledge, 0 = Acknowledge
+  SSP1CON2bits.ACKEN = 1;          // Enable Acknowledge
+  while (SSP1CON2bits.ACKEN == 1);
+}
+
+unsigned char i2c_read(void)
+{
+  // Ensure the I2C module is idle
+  i2c_idle();
+  // Enable Receive Mode
+  SSP1CON2bits.RCEN = 1;           // Enable master for 1 byte reception
+  while(!SSP1STATbits.BF);         // Wait until buffer is full
+  return(SSP1BUF);
+}
+
+unsigned char i2c_isdatardy(void)
+{
+    if ( SSP1STATbits.BF) return ( +1);
+    else return ( 0 );
+}
 
 /********************************************************************
  * Function:        void BlinkUSBStatus(void)

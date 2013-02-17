@@ -4,14 +4,24 @@ import usb.util
 from array import array
 import sys
 import time
-# This version is under heavy development and will be converted fully into a module
-# that will be externally callable.  For now add your test code to the bottom
-# below the === end of module statement
-# ---- This version is testing HK's addtion of SFR control
-_mod_ver  = '0.22'	# python HKUSBIO module version
-_mod_date = '2/15/2013'	# module date
+# This version is under heavy development 
+# You can add your test code to the bottom
+# below the === end of module statement, or 
+# externally call the module
+# ---- This version added i2c commands
+_mod_ver  = '0.40'	# python HKUSBIO module version
+_mod_date = '2/17/2013'	# module date
 u_ad0 = 0x37	# read ADC value from RA0
 u_ad1 = 0x38	# read ADC value from RA1
+u_i2c_init = 0x40	# i2c_init(void)
+u_i2c_idle = 0x41	# i2c_idle(void)
+u_i2c_strt = 0x42	# i2c_start(uchar)
+u_i2c_stop = 0x43	# i2c_stop(void)
+u_i2c_slak = 0x44	# uchar i2c_slave_ack(void)
+u_i2c_writ = 0x45	# void i2c_write(uchar)
+u_i2c_mack = 0x46	# void i2c_master_ack(uchar)
+u_i2c_read = 0x47	# uchar i2c_read(void)
+u_i2c_dtrd = 0x48	# uchar i2c_isdatardy(void)
 u_rom = 0x85	# get PIC rom version
 u_led = 0x80	# toggle LED 
 u_swc = 0x81	# get switch pressed or not
@@ -32,6 +42,14 @@ rd6 = 3		# GPIO pin rd6	def=output
 rd7 = 4		# GPIO pin rd7	def=output
 dir_output = 0	# control GPIO pin direction
 dir_input  = 1
+I2C_DATA_ACK 		= 0
+I2C_DATA_NOACK 		= 1
+I2C_WRITE_CMD 		= 0
+I2C_READ_CMD 		= 1
+I2C_START_CMD 		= 0
+I2C_REP_START_CMD 	= 1
+I2C_REQ_ACK 		= 0
+I2C_REQ_NOACK 		= 0
 def init():				# setup USB device structure
 	# find our device
 	dev = usb.core.find(idVendor=0x04d8, idProduct=0x003f)
@@ -136,44 +154,40 @@ def sfr_set_regbit(dev, reg, rbit, bval):	# set a SFR register bit
 	dev.write(1, a, 0, 100)
 	ret = dev.read(0x81, 64, 0, 100)
 	return ret[1]
+def i2c_init(dev):			# init i2c
+	dev.write(1,[u_i2c_init], 0, 100)
+def i2c_idle(dev):			# i2c idle
+	dev.write(1,[u_i2c_idle], 0, 100)
+def i2c_start(dev, cval):		# i2c start
+	a = array('B',[0,0,0,0,0,0,0,0,0,0,0,0,0,0])
+	a[0] = u_i2c_strt
+	a[1] = cval
+	dev.write(1, a, 0, 100)
+def i2c_stop(dev):			# i2c stop
+	dev.write(1,[u_i2c_stop], 0, 100)
+def i2c_slave_ack(dev):			# i2c slave ack
+	dev.write(1,[u_i2c_slak], 0, 100)
+	ret = dev.read(0x81, 64, 0, 100)
+	return ret[1]			# 1=no ack, 0=ack
+def i2c_write(dev, cval):		# i2c write
+	a = array('B',[0,0,0,0,0,0,0,0,0,0,0,0,0,0])
+	a[0] = u_i2c_writ
+	a[1] = cval
+	dev.write(1, a, 0, 100)
+def i2c_master_ack(dev, cval):		# 1=nack, 0=ack
+	a = array('B',[0,0,0,0,0,0,0,0,0,0,0,0,0,0])
+	a[0] = u_i2c_mack
+	a[1] = cval
+	dev.write(1, a, 0, 100)
+def i2c_read(dev):			# i2c read
+	dev.write(1,[u_i2c_read], 0, 100)
+	ret = dev.read(0x81, 64, 0, 100)
+	return ret[1]			# i2c_read char
+def i2c_isdatardy(dev):			# check if i2c char avail
+	dev.write(1,[u_i2c_dtrd], 0, 100)
+	ret = dev.read(0x81, 64, 0, 100)
+	return ret[1]			# i2c_read char
 def close(dev):				# reset USB device
 	dev.reset()
 
 #===================== end of module =========
-usb = init()			# init the USB IO board
-
-print module_version()		# print python module version
-
-print rom_version(usb)		# print rom version
-
-toggle_led(usb)			# toggle the LED
-
-a = read_switch(usb)		# read the switch status
-print a
-
-gpio_init(usb,rd7,dir_input)	# configure gpio RD7 as input
-a = gpio_in(usb,rd7)		# read the GPIO pin RD7
-print a
-
-a = adc_ra1(usb)		# do ADC conversion on pin RA1
-print a
-
-# LCD on serial port (UART IO to a serial attached LCD)
-#ser_putc(usb,chr(0xfe))		# clear LCD screen
-#ser_putc(usb,chr(0x01))	
-#ser_putc(usb,chr(0xfe))		# block cursor
-#ser_putc(usb,chr(0x0d))
-#ser_puts(usb,"Hello World")
-#ser_puts(usb,chr(0xfe) + chr(192))	# move to next line
-#ser_puts(usb,"From Odroid-x2")
-
-#if (ser_test(usb)):		# check if incoming char on UART
-#	a = ser_getc(usb)
-#	print a
-#else:
-#	print "no"
-
-a = sfr_get_reg(usb, 0x8b)	# not sure this is working only get zero's back
-print a
-
-close(usb)
