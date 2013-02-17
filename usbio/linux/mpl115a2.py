@@ -81,14 +81,24 @@ for x in range (1,5):
 	coeff[x] = dataMSB << 8 | dataLSB
 	scoeff[x] = coeff[x]
 test = i2c_read(usb)	# PIC usb stops if we don't read one more byte
+print "Hex raw coeff: " 
+print hex(coeff[1]), hex(coeff[2]), hex(coeff[3]), hex(coeff[4])
 mpl_a0 = float(coeff[1]) / 8
 mpl_b1 = float(coeff[2]) / 8182
 mpl_b2 = float(coeff[3]) / 16384
 mpl_c12 = float(coeff[4])
 mpl_c12 /= 4194304.0
+if (coeff[1] > 0x7fff):
+	mpl_a0 *= -1
+if (coeff[2] > 0x7fff):
+	mpl_b1 *= -1
+if (coeff[3] > 0x7fff):
+	mpl_b2 *= -1
+if (coeff[4] > 0x7fff):
+	mpl_c12 *= -1
 # per data sheet should have some 0xBE0A like negative numbers
 # need to figure out how to test for those
-print "coefficients are:"
+print "processed coefficients are:"
 print mpl_a0, mpl_b1, mpl_b2, mpl_c12
 i2c_start(usb, I2C_START_CMD)
 i2c_write(usb, (MPL115A2_ADDRESS << 1) | I2C_WRITE_CMD)
