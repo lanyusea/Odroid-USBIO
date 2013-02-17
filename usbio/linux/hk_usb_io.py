@@ -4,10 +4,12 @@ import usb.util
 from array import array
 import sys
 import time
+# Markham Thomas 2013
 # This version is under heavy development 
 # You can add your test code to the bottom
 # below the === end of module statement, or 
 # externally call the module
+# note: sfr_* routines still need to be tested
 # ---- This version added i2c commands
 _mod_ver  = '0.40'	# python HKUSBIO module version
 _mod_date = '2/17/2013'	# module date
@@ -42,7 +44,7 @@ rd6 = 3		# GPIO pin rd6	def=output
 rd7 = 4		# GPIO pin rd7	def=output
 dir_output = 0	# control GPIO pin direction
 dir_input  = 1
-I2C_DATA_ACK 		= 0
+I2C_DATA_ACK 		= 0	# i2c constants
 I2C_DATA_NOACK 		= 1
 I2C_WRITE_CMD 		= 0
 I2C_READ_CMD 		= 1
@@ -189,5 +191,4 @@ def i2c_isdatardy(dev):			# check if i2c char avail
 	return ret[1]			# i2c_read char
 def close(dev):				# reset USB device
 	dev.reset()
-
 #===================== end of module =========

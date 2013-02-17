@@ -1,4 +1,6 @@
 #!/usr/bin/python
+# Markham Thomas  2/17/2013
+# todo:  apply correction coefficents
 from hk_usb_io import *
 import sys
 import time
@@ -86,6 +88,7 @@ mpl_c12 = float(coeff[4])
 mpl_c12 /= 4194304.0
 # per data sheet should have some 0xBE0A like negative numbers
 # need to figure out how to test for those
+print "coefficients are:"
 print mpl_a0, mpl_b1, mpl_b2, mpl_c12
 i2c_start(usb, I2C_START_CMD)
 i2c_write(usb, (MPL115A2_ADDRESS << 1) | I2C_WRITE_CMD)
