@@ -11,7 +11,7 @@ import time
 # externally call the module
 # note: sfr_* routines still need to be tested
 # ---- This version added i2c commands
-_mod_ver  = '0.40'	# python HKUSBIO module version
+_mod_ver  = '0.41'	# python HKUSBIO module version
 _mod_date = '2/17/2013'	# module date
 u_ad0 = 0x37	# read ADC value from RA0
 u_ad1 = 0x38	# read ADC value from RA1
@@ -126,33 +126,33 @@ def ser_getc(dev):			# get a single char from the serial port
 	return ret[1]
 def sfr_get_reg(dev, reg):		# get a SFR register
 	a = array('B',[0,0,0,0,0,0,0,0,0,0,0,0,0,0])
-	a[9] = reg
-	a.insert(0, h_getr)
+	a[10] = reg
+	a[0] = h_getr
 	dev.write(1, a, 0, 100)
 	ret = dev.read(0x81, 64, 0, 100)
 	return ret[1]
 def sfr_set_reg(dev, reg, rval):	# set a SFR register
 	a = array('B',[0,0,0,0,0,0,0,0,0,0,0,0,0,0])
-	a[9] = reg			# register to select
-	a[10] = rval			# value to set
-	a.insert(0, h_setr)
+	a[10] = reg			# register to select
+	a[11] = rval			# value to set
+	a[0] = h_setr
 	dev.write(1, a, 0, 100)
 	ret = dev.read(0x81, 64, 0, 100)
 	return ret[1]
 def sfr_get_regbit(dev, reg, bval):	# get a SFR register bit
 	a = array('B',[0,0,0,0,0,0,0,0,0,0,0,0,0,0])
-	a[9] = reg			# register to select
-	a[10] = bval			# bit value to get
-	a.insert(0, h_getb)
+	a[10] = reg			# register to select
+	a[11] = bval			# bit value to get
+	a[0] = h_getb
 	dev.write(1, a, 0, 100)
 	ret = dev.read(0x81, 64, 0, 100)
 	return ret[1]
 def sfr_set_regbit(dev, reg, rbit, bval):	# set a SFR register bit
 	a = array('B',[0,0,0,0,0,0,0,0,0,0,0,0,0,0])
-	a[9] = reg			# register to select
-	a[10] = rbit			# bit to set
-	a[11] = bval			# bit value to set
-	a.insert(0, h_setb)
+	a[10] = reg			# register to select
+	a[11] = rbit			# bit to set
+	a[12] = bval			# bit value to set
+	a[0]  = h_setb
 	dev.write(1, a, 0, 100)
 	ret = dev.read(0x81, 64, 0, 100)
 	return ret[1]
