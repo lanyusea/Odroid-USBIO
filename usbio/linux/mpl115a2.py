@@ -72,14 +72,12 @@ i2c_start(usb, I2C_REP_START_CMD)
 # get some data
 i2c_write(usb, (MPL115A2_ADDRESS << 1) |I2C_READ_CMD)
 coeff = array('i',[0,0,0,0,0,0,0,0,0,0,0,0,0,0])
-scoeff = array('i',[0,0,0,0,0,0,0,0,0,0,0,0,0,0])
 for x in range (1,5):
 	dataMSB = i2c_read(usb)
 	i2c_master_ack(usb, I2C_DATA_ACK)
 	dataLSB = i2c_read(usb)
 	i2c_master_ack(usb, I2C_DATA_ACK)
 	coeff[x] = dataMSB << 8 | dataLSB
-	scoeff[x] = coeff[x]
 test = i2c_read(usb)	# PIC usb stops if we don't read one more byte
 print "Hex raw coeff: " 
 print hex(coeff[1]), hex(coeff[2]), hex(coeff[3]), hex(coeff[4])
