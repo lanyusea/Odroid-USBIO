@@ -356,9 +356,10 @@ unsigned char ReceivedDataBuffer[BSIZE] RX_DATA_BUFFER_ADDRESS;
 unsigned char ToSendDataBuffer[BSIZE] TX_DATA_BUFFER_ADDRESS;
 unsigned char I2C_Send[BSIZE];     // I2C buffers  HK_USB_IO
 // HK_USB_IO demo
-char version[] = "040";     // version major.minor.fix
+char version[] = "041";     // version major.minor.fix
 // revisions:  031   first release:  gpio, adc, serial
 // 040:  i2c
+// 041:  i2c bumped to 400khz
 
 #if defined(__18CXX)
 #pragma udata
@@ -1417,7 +1418,8 @@ void i2c_init(void) {
     SSP1CON1 |= 0x08;
     SSP1STAT |= 0x80;
     SSP1CON1 |= 0x20;      // ==== if not can revert to above 3 commented out
-  SSP1ADD = 0x77;       // 100 kHz
+  //SSP1ADD = 0x77;       // 100 kHz
+    SSP1ADD = 0x1d;       // 400 kHz
   PIR1bits.SSPIF=0;    // Clear MSSP Interrupt Flag
 }
 
