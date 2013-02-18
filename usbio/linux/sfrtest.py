@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # Markham Thomas  2/17/2013
-# todo:  apply correction coefficents
+# SFR test program
 from hk_usb_io import *
 import sys
 import time
