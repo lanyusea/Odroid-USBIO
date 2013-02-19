@@ -2,9 +2,10 @@
 # Markham Thomas  2/18/2013
 # L3G4200D -- Gyroscope module 3-axis 
 from hk_usb_io import *
+from ctypes import *
 import sys
 import time
-# notes:  output is in 2's complement per data sheet
+# note: output now in signed decimal instead of 2's complement
 usb = init()			# init the USB IO board
 print module_version()		# print python module version
 print rom_version(usb)		# print rom version
@@ -21,30 +22,30 @@ def writeRegister(dev_addr, addr, value):
 	i2c_start(usb, I2C_START_CMD)
 	i2c_write(usb, (dev_addr << 1 | I2C_WRITE_CMD))
 	while (i2c_slave_ack(usb)):
-		time.sleep(1)
+		time.sleep(0.1)
 	# select the register to write to 
 	i2c_write(usb, addr)
 	while (i2c_slave_ack(usb)):
-		time.sleep(1)
+		time.sleep(0.1)
 	# write the value to the previously selected reg
 	i2c_write(usb, value)
 	while (i2c_slave_ack(usb)):
-		time.sleep(1)
+		time.sleep(0.1)
 	i2c_stop(usb)
 def readRegister(dev_addr, addr):
 	i2c_start(usb, I2C_START_CMD)
 	i2c_write(usb, (dev_addr << 1 | I2C_WRITE_CMD))
 	while (i2c_slave_ack(usb)):	# wait for slave ack
-		time.sleep(1)
+		time.sleep(0.1)
 	# select the register address to read
 	i2c_write(usb, addr)
 	while (i2c_slave_ack(usb)):	# wait for slave ack
-		time.sleep(1)
+		time.sleep(0.1)
 	i2c_start(usb, I2C_REP_START_CMD)
 	i2c_write(usb, (dev_addr << 1 | I2C_READ_CMD))
 	# read the value from the register
 	while (i2c_slave_ack(usb)):	# wait for slave ack
-		time.sleep(1)
+		time.sleep(0.1)
 	a = i2c_read(usb)
 	# ack the byte
 	i2c_master_ack(usb, I2C_DATA_NOACK)
@@ -74,18 +75,19 @@ def get_gyro():
 	xLSB = readRegister(L3G4200D_ADDRESS, 0x28)
 	xMSB = readRegister(L3G4200D_ADDRESS, 0x29)
 	#print hex(xMSB), hex(xLSB)
-	x = ( xMSB << 8 ) | xLSB
+	x = c_short(( xMSB << 8 ) | xLSB)
 	yLSB = readRegister(L3G4200D_ADDRESS, 0x2A)
 	yMSB = readRegister(L3G4200D_ADDRESS, 0x2B)
 	#print hex(yMSB), hex(yLSB)
-	y = ( yMSB << 8 ) | yLSB
+	y = c_short(( yMSB << 8 ) | yLSB)
 	zLSB = readRegister(L3G4200D_ADDRESS, 0x2C)
 	zMSB = readRegister(L3G4200D_ADDRESS, 0x2D)
 	#print hex(zMSB), hex(zLSB)
-	z = ( zMSB << 8 ) | zLSB
-	a[0] = x
-	a[1] = y
-	a[2] = z
+	z = c_short(( zMSB << 8 ) | zLSB)
+	#print x.value,y.value,z.value
+	a[0] = x.value
+	a[1] = y.value
+	a[2] = z.value
 	return a
 
 # start i2c
@@ -97,4 +99,4 @@ time.sleep(1.5)		# wait for sensor to become ready
 for n in range (1, 60):
 	time.sleep(0.2)
 	a = get_gyro()
-	print "x=%6d, y=%6d, z=%6d  (in 2's complement)" % (a[0], a[1], a[2])
+	print "x=%6d, y=%6d, z=%6d" % (a[0], a[1], a[2])

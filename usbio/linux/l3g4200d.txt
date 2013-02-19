@@ -1,5 +1,7 @@
 This python code configures and reads the Parallax L3G4200D gyroscope module via I2C
 
-The buildr code doesn't mention 2's compliment while the data sheet does.
+The output should be correct signed decimal.
+I did not convert it to radians per second or degrees per second, but there are plenty of 
+documents on the web stating how to do that.
 
-Todo:  convert output from 2's complement to degree's per second
+
