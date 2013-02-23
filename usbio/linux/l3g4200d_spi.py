@@ -23,7 +23,7 @@ L3G4200D_OUTTEMP   = 0x26
 L3G4200D_STATUSREG = 0x27
 
 def writeRegister(addr, value):
-	spi_cs(usb, SPI_CS_ENABLE)
+	spi_cs(usb, SPI_CS_ENABLE)	# RB5 goes low
 	time.sleep(0.05)		# sleep time for CS seems critical
 	spi_transfer(usb, addr & 0x7f )
 	spi_transfer(usb, value)
@@ -32,9 +32,9 @@ def writeRegister(addr, value):
 def readRegister(addr):
 	spi_cs(usb, SPI_CS_ENABLE)
 	time.sleep(0.05)
-	spi_transfer(usb, addr | 0x80 )
+	spi_transfer(usb, addr | 0x80 ) # requesting a read from address
 	a = spi_transfer(usb, 0x00)	# dummy write new data shifts in
-	spi_cs(usb, SPI_CS_DISABLE)
+	spi_cs(usb, SPI_CS_DISABLE)	# CS off (RB5 goes high)
 	time.sleep(0.05)
 	return a
 def setupL3G4200D(scale):
@@ -82,8 +82,6 @@ def get_gyro():
 	a[2] = z.value
 	return a
 
-# start i2c
-i2c_init(usb)
 # configure sensor - 250, 500 or 2000 deg/sec
 setupL3G4200D(250)	# setup the sensor
 time.sleep(1.5)		# wait for sensor to become ready
