@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# Markham Thomas  2/17/2013
+# Markham Thomas  2/23/2013
 # SFR GPIO test program
 # This program demonstrates using the SFR registers to 
 # setup and control the GPIO pins
@@ -16,25 +16,8 @@ print "----------- output ------------"
 
 #-------------- One method of GPIO constants -----------
 ANSELA = 0x5b
-ANSELB = 0x5c
-ANSELC = 0x5d
-ANSELD = 0x5e
-ANSELE = 0x5f
-PORTA  = 0x80
-PORTB = 0x81
-PORTC = 0x82
-PORTD = 0x83
-PORTE = 0x84
-TRISA = 0x92
-TRISB = 0x93
-TRISC = 0x94
-TRISD = 0x95
-TRISE = 0x96
-LATA = 0x89
-LATB = 0x8a
-LATC = 0x8b
-LATD = 0x8c
-LATE = 0x8d
+TRISA  = 0x92
+LATA   = 0x89
 
 #---- Optionally using a dictionary to hold the constants ----
 ior = {   'ANSELA': 0x5b, 'ANSELB' : 0x5c ,'ANSELC' : 0x5d, 'ANSELD' : 0x5e, 'ANSELE' : 0x5f,
