@@ -42,7 +42,7 @@
   2.9f  Adding new part support
 ********************************************************************/
 #include <usart.h>      // hk_usb_io
-
+#include <delays.h>
 #ifndef MAIN_C
 #define MAIN_C
 #define USE_INTERNAL_OSC
@@ -354,12 +354,12 @@
 #define BSIZE  80      // hk_usb_io
 unsigned char ReceivedDataBuffer[BSIZE] RX_DATA_BUFFER_ADDRESS;
 unsigned char ToSendDataBuffer[BSIZE] TX_DATA_BUFFER_ADDRESS;
-unsigned char I2C_Send[BSIZE];     // I2C buffers  HK_USB_IO
 // HK_USB_IO demo
-char version[] = "041";     // version major.minor.fix
+char version[] = "050";     // version major.minor.fix
 // revisions:  031   first release:  gpio, adc, serial
 // 040:  i2c
 // 041:  i2c bumped to 400khz
+// 050:  SPI support added
 
 #if defined(__18CXX)
 #pragma udata
@@ -391,6 +391,9 @@ void i2c_write(unsigned char);
 void i2c_master_ack(unsigned char);
 unsigned char i2c_read(void);
 unsigned char i2c_isdatardy(void);
+void spi_init(unsigned char, unsigned char, unsigned char);
+unsigned char spi_transfer(unsigned char);
+void spi_cs(unsigned char);
 
 /** VECTOR REMAPPING ***********************************************/
 #if defined(__18CXX)
@@ -1015,6 +1018,20 @@ void ProcessIO(void)
                     USBInHandle = HIDTxPacket(HID_EP,(BYTE*)&ToSendDataBuffer[0],64);
                 }
                 break;
+                // reserve space for I2C block functions
+            case 0x50:  // void spi_init(mode, baud, sample)
+                spi_init(ReceivedDataBuffer[1],ReceivedDataBuffer[2], ReceivedDataBuffer[3]);
+                break;
+            case 0x51:  // unsigned char spi_transfer(unsigned char addr)
+                ToSendDataBuffer[1] = spi_transfer(ReceivedDataBuffer[1]);
+                ToSendDataBuffer[0] = 0x51;
+                if(!HIDTxHandleBusy(USBInHandle)) {
+                    USBInHandle = HIDTxPacket(HID_EP,(BYTE*)&ToSendDataBuffer[0],64);
+                }
+                break;
+            case 0x52:  // chip select:  void spi_cs(1 or 0)  0-enables
+                spi_cs(ReceivedDataBuffer[1]);
+                break;
             case 0x80:  //Toggle LEDs command
 		        blinkStatusValid = FALSE;			//Stop blinking the LEDs automatically, going to manually control them now.
                 if(mGetLED_1() == mGetLED_2())
@@ -1392,7 +1409,7 @@ WORD_VAL ReadPOT(void)
 }//end ReadPOT
 
 /********************************************************************/
-/* I2C routines */
+/* I2C routines HK USB_IO demo */
 // I2C Bus Control Definition
 #define I2C_DATA_ACK 0
 #define I2C_DATA_NOACK 1
@@ -1486,7 +1503,99 @@ unsigned char i2c_isdatardy(void)
     if ( SSP1STATbits.BF) return ( +1);
     else return ( 0 );
 }
+/************************************************
+ SPI routines HK USB_IO */
+/* notes:  RB7 = SDO, RB0 = SDI,  RB1 = SCLK, RB5 = CS (on python side) */
+void spi_init(unsigned char mode, unsigned char baud, unsigned char sample)
+{
+    int baud_bits;
+    // initialize the SPI peripheral
+    // SSP1CON1--->SSPM<3:0>
+    // bit 3-0 SSPM<3:0>: Synchronous Serial Port Mode Select bits
+    // 0000 = SPI Master mode, clock = FOSC/4  = 12mhz
+    // 0001 = SPI Master mode, clock = FOSC/16 = 3mhz
+    // 0010 = SPI Master mode, clock = FOSC/64 = 750khz
+    if (baud == 0) {
+        baud_bits = 0b00000010;
+    }
+    else if (baud == 1) {
+        baud_bits = 0b00000001;
+    }
+    else if (baud == 2) {
+        baud_bits = 0b00000000;
+    }
+    else {
+        baud_bits = 0b00000010;
+    }
+    ANSELBbits.ANSB1 = 0;
+    ANSELBbits.ANSB0 = 0;
+    ANSELAbits.ANSA5 = 0;
+    SSP1CON1 = 0x00;    // reset serial
+    TRISCbits.TRISC7 = 0;  // init code does RC7 for SDO
+    TRISAbits.TRISA5 = 0;   // RA5/SS - output (chip select)
+    TRISBbits.TRISB0 = 1;   // RB0/SDI - input (serial data in)
+    TRISBbits.TRISB1 = 0;   // RB1/SCK - output (clock)
+    // TRISBbits.TRISB3 = 0;  // RB3=SDO output (init code does not set this up)
+    // clock polarity controlled by: CKP bit of SSP1CON1 and CKE bit of SSP1STAT
+    // SSP1CON1 - CKP bit = bit4
+    // SSP1STAT - CKE bit = bit6  (clock polarity control with these 2)
+    // m0(CKP=0,CKE=0) m1(CKP=1,CKE=0) m2(CKP=0,CKE=1 m3(CKP=1,CKE=1)
+    // SSP1CON1 -> bit5 stays 1 to enable MSSP
+    // SSP1CON1 [WCOL|SSPOV|SSPEN|CKP| SSPM<3:0>]
+    // SSP1STAT [SMP|CKE|<---na-->|BF]
+    switch (mode)
+    {
+        case 0:
+            SSP1STAT = 0x40;             // CKE=1, CKP=0                 (mode0)
+            SSP1CON1 = 0x00 | baud_bits; // enable SPI master with Fosc/16 = 3mhz
+            break;
+        case 1:
+            SSP1STAT = 0x00;             // CKE=0, CKP=0                 (mode1)
+            SSP1CON1 = 0x00 | baud_bits; // enable SPI master with Fosc/16 = 3mhz
+            break;
+        case 2:
+            SSP1STAT = 0x40;             // CKE=1, CKP=1                 (mode2)
+            SSP1CON1 = 0x10 | baud_bits; // enable SPI master with Fosc/16 = 3mhz
+            break;
+        case 3:
+            SSP1STAT = 0x00;             // CKE=0, CKP=1                 (mode3)
+            SSP1CON1 = 0x10 | baud_bits; // enable SPI master with Fosc/16 = 3mhz
+            break;
+        default:        //mode 2
+            SSP1STAT = 0x40;             // set SMP=0 and CKE=1, CKP=0   (mode2)
+            SSP1CON1 = 0x00 | baud_bits; // enable SPI master with Fosc/16 = 3mhz
+            break;
+    }
+    if (sample == 0) {
+      SSP1STAT &= 0b01111111;           // input sampled in middle
+    }
+    else if (sample == 1) {
+      SSP1STAT != 0b10000000;           // input sampled at end
+    } else { SSP1STAT &= 0b01111111; }  // input sampled in middle}
+    SSP1CON1 |= 0b00100000;             // enable serial port: SSPEN=1
+    LATAbits.LATA5 = 1;
+}
 
+unsigned char spi_transfer(unsigned char addr)
+{
+  SSP1BUF = addr;           // write byte to SSP1BUF register
+  while (!SSP1STATbits.BF); // wait for data transmit/receipt complete
+  return ( SSP1BUF );       // return the value (ignored or the one we want)
+
+}
+
+void spi_cs(unsigned char select)
+{   // chip select, normally high
+    if (select == 0) {
+        LATAbits.LATA5 = 0;
+    }
+    else if (select == 1) {
+        LATAbits.LATA5 = 1;
+    }
+    else {
+        LATAbits.LATA5 = 0;
+    }
+}
 /********************************************************************
  * Function:        void BlinkUSBStatus(void)
  *

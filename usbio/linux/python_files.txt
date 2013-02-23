@@ -7,3 +7,4 @@ hk_usb_io.py  --- The HK USB IO board module         (provides access to the PIC
 mpl115a2.py - I2C communication to the MPL115A2 digitail barometer and temperature gauge
 sfrtest.py  - short python script for testing SFR (special function register) PIC access
 l3g4200d.py - I2C communication to the L3G4200D digital gyroscope from Parallax
+l3g4200d_spi.py - SPI communication to the L3G4200D digital gyroscope from Parallax

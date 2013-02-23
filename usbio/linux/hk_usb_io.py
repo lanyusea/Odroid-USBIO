@@ -10,9 +10,9 @@ import time
 # below the === end of module statement, or 
 # externally call the module
 # note: sfr_* routines still need to be tested
-# ---- This version added i2c commands
-_mod_ver  = '0.41'	# python HKUSBIO module version
-_mod_date = '2/17/2013'	# module date
+# ---- This version added SPI commands
+_mod_ver  = '0.50'	# python HKUSBIO module version
+_mod_date = '2/22/2013'	# module date
 u_ad0 = 0x37	# read ADC value from RA0
 u_ad1 = 0x38	# read ADC value from RA1
 u_i2c_init = 0x40	# i2c_init(void)
@@ -24,6 +24,9 @@ u_i2c_writ = 0x45	# void i2c_write(uchar)
 u_i2c_mack = 0x46	# void i2c_master_ack(uchar)
 u_i2c_read = 0x47	# uchar i2c_read(void)
 u_i2c_dtrd = 0x48	# uchar i2c_isdatardy(void)
+u_spi_init = 0x50	# void spi_init(mode, baud, sample)
+u_spi_tran = 0x51	# uchar spi_transfer(regAddr)
+u_spi_cs   = 0x52	# void spi_cs(enable|disable)
 u_rom = 0x85	# get PIC rom version
 u_led = 0x80	# toggle LED 
 u_swc = 0x81	# get switch pressed or not
@@ -44,6 +47,17 @@ rd6 = 3		# GPIO pin rd6	def=output
 rd7 = 4		# GPIO pin rd7	def=output
 dir_output = 0	# control GPIO pin direction
 dir_input  = 1
+SPI_LOW_BAUD = 0# 750khz
+SPI_MED_BAUD = 1# 3mhz
+SPI_HI_BAUD  = 2# 12mhz
+SPI_SAMP_MID = 0# sample input in middle data input time
+SPI_SAMP_END = 1# sample input at end of data input
+SPI_MODE0    = 0
+SPI_MODE1    = 1
+SPI_MODE2    = 2
+SPI_MODE3    = 3
+SPI_CS_ENABLE  = 0
+SPI_CS_DISABLE = 1
 I2C_DATA_ACK 		= 0	# i2c constants
 I2C_DATA_NOACK 		= 1
 I2C_WRITE_CMD 		= 0
@@ -189,6 +203,25 @@ def i2c_isdatardy(dev):			# check if i2c char avail
 	dev.write(1,[u_i2c_dtrd], 0, 100)
 	ret = dev.read(0x81, 64, 0, 100)
 	return ret[1]			# i2c_read char
+def spi_init(dev, mode, baud, sample):	# SPI init
+	a = array('B',[0,0,0,0,0])
+	a[0] = u_spi_init
+	a[1] = mode
+	a[2] = baud
+	a[3] = sample
+	dev.write(1, a, 0, 100)
+def spi_transfer(dev, value): 		# SPI transfer 
+	a = array('B',[0,0,0,0,0])
+	a[0] = u_spi_tran
+	a[1] = value
+	dev.write(1, a, 0, 100)
+	ret = dev.read(0x81, 64, 0, 100)
+	return ret[1]			# ret SPI char read
+def spi_cs(dev, select): 		# enable or disable SPI CS
+	a = array('B',[0,0,0,0,0])
+	a[0] = u_spi_cs
+	a[1] = select
+	dev.write(1, a, 0, 100)
 def close(dev):				# reset USB device
 	dev.reset()
 #===================== end of module =========
