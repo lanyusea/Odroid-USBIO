@@ -9,3 +9,4 @@ l3g4200d.py - I2C communication to the L3G4200D digital gyroscope from Parallax
 l3g4200d_spi.py - SPI communication to the L3G4200D digital gyroscope from Parallax
 sfrtest.py  - short python script for testing SFR (special function register) PIC access
 sfr_gpio.py - script that demonstrates using the SFR_reg commands to program and use GPIO pins
+sfr_spi.py  - script showing SPI communcation with only SFR registers used
