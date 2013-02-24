@@ -1,5 +1,6 @@
 HK USB IO board demo programs  
 =============================  
+|**Program**|**Description**|
 |-------|:-----------|
 |**hk_usb_io.py**|**The python module that allows access to USBIO demo ROM functions**  |
 |l3g4200d.py|I2C - Digital Gyroscope example  |
