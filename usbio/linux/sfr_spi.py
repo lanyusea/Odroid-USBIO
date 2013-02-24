@@ -68,7 +68,7 @@ sfr_set_reg(usb, spi['SSP1BUF'], 0x0f | 0x80)	# 0x0f is whoami,  0x80 says spi r
 while not (sfr_get_regbit(usb, spi['SSP1STAT'], 0)):
 	time.sleep(0.05)
 
-# dummy read to shift data in from the gyro
+# dummy write to shift data in from the gyro
 sfr_set_reg(usb, spi['SSP1BUF'], 0x00)		# dummy write to shift in response
 while not (sfr_get_regbit(usb, spi['SSP1STAT'], 0)):
 	time.sleep(0.05)
