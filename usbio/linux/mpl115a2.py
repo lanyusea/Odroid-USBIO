@@ -1,46 +1,20 @@
 #!/usr/bin/python
+#
 # Markham Thomas  2/17/2013
+#
 # todo:  apply correction coefficents
+#   and compute proper temperature value
+
 from hk_usb_io import *
 import sys
 import time
 
-usb = init()			# init the USB IO board
+usb = init()			# connect to the USB IO board
 
+#==== print version info ====
 print module_version()		# print python module version
-
 print rom_version(usb)		# print rom version
 print "---------- output -----------"
-
-#toggle_led(usb)			# toggle the LED
-
-#a = read_switch(usb)		# read the switch status
-#print a
-
-#gpio_init(usb,rd7,dir_input)	# configure gpio RD7 as input
-#a = gpio_in(usb,rd7)		# read the GPIO pin RD7
-#print a
-
-#a = adc_ra1(usb)		# do ADC conversion on pin RA1
-#print a
-
-# LCD on serial port (UART IO to a serial attached LCD)
-#ser_putc(usb,chr(0xfe))		# clear LCD screen
-#ser_putc(usb,chr(0x01))	
-#ser_putc(usb,chr(0xfe))		# block cursor
-#ser_putc(usb,chr(0x0d))
-#ser_puts(usb,"Hello World")
-#ser_puts(usb,chr(0xfe) + chr(192))	# move to next line
-#ser_puts(usb,"From Odroid-x2")
-
-#if (ser_test(usb)):		# check if incoming char on UART
-#	a = ser_getc(usb)
-#	print a
-#else:
-#	print "no"
-
-#a = sfr_get_reg(usb, 0x8b)	# not sure this is working only get zero's back
-#print a
 
 #====== MPL115A2 pressure/temp sensor
 MPL115A2_ADDRESS = 0x60
@@ -57,9 +31,10 @@ MPL115A2_REGISTER_B2_COEFF_LSB = 0x09
 MPL115A2_REGISTER_C12_COEFF_MSB = 0x0A
 MPL115A2_REGISTER_C12_COEFF_LSB = 0x0B
 MPL115A2_REGISTER_STARTCONVERSION = 0x12
+#=== sample sequence of I2C read
 # read coeff: [0xC0], [0x04], [0xC1], [0x3E], [0xCE],
 #     [0xB3], [0xF9], [0xC5], [0x17], [0x33], [0xC8]
-# start i2c
+#=== start i2c
 i2c_init(usb)
 # start i2c transmission
 i2c_start(usb, I2C_START_CMD)
@@ -94,15 +69,13 @@ if (coeff[3] > 0x7fff):
 	mpl_b2 *= -1
 if (coeff[4] > 0x7fff):
 	mpl_c12 *= -1
-# per data sheet should have some 0xBE0A like negative numbers
-# need to figure out how to test for those
 print "processed coefficients are:"
 print mpl_a0, mpl_b1, mpl_b2, mpl_c12
 i2c_start(usb, I2C_START_CMD)
 i2c_write(usb, (MPL115A2_ADDRESS << 1) | I2C_WRITE_CMD)
 i2c_write(usb, MPL115A2_REGISTER_STARTCONVERSION) 
 i2c_write(usb, MPL115A2_REGISTER_PRESSURE_MSB) 
-time.sleep(1)	# delay (only needs 5ms but this will do for now
+time.sleep(1)	# delay (only needs 5ms but this will do for now)
 i2c_start(usb, I2C_START_CMD)
 i2c_write(usb, (MPL115A2_ADDRESS << 1) | I2C_WRITE_CMD)
 i2c_write(usb, MPL115A2_REGISTER_PRESSURE_MSB) 
