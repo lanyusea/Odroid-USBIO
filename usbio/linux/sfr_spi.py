@@ -69,11 +69,13 @@ while not (sfr_get_regbit(usb, spi['SSP1STAT'], 0)):
 	time.sleep(0.05)
 
 # dummy read to shift data in from the gyro
-sfr_set_reg(usb, spi['SSP1BUF'], 0x00)		# dummy read to shift in response
+sfr_set_reg(usb, spi['SSP1BUF'], 0x00)		# dummy write to shift in response
 while not (sfr_get_regbit(usb, spi['SSP1STAT'], 0)):
 	time.sleep(0.05)
 
 # get the data from the gyro's register selected earlier
 a = sfr_get_reg(usb, spi['SSP1BUF'])		# get value from gyroscope
-my_spi_cs(SS_HIGH)
+
+my_spi_cs(SS_HIGH)				# disable CHIP (SS=HIGH)
+
 print "Reponse should be 0xd3, value is: ", hex(a)
