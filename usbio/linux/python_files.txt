@@ -3,6 +3,8 @@ This is a description of the functions provided by each of the supplied python f
 
 
 hk_usb_io.py  --- The HK USB IO board module         (provides access to the PIC ROM via USB)
+
+sfr_constants.py --- Constants for accessing SFR registers
 ----------------- each file below uses the above python module ---------------------
 mpl115a2.py - I2C communication to the MPL115A2 digitail barometer and temperature gauge
 l3g4200d.py - I2C communication to the L3G4200D digital gyroscope from Parallax
@@ -10,3 +12,5 @@ l3g4200d_spi.py - SPI communication to the L3G4200D digital gyroscope from Paral
 sfrtest.py  - short python script for testing SFR (special function register) PIC access
 sfr_gpio.py - script that demonstrates using the SFR_reg commands to program and use GPIO pins
 sfr_spi.py  - script showing SPI communcation with only SFR registers used
+sfrtest.py  - shows how to access SFR registers using SFR constants
+
