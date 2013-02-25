@@ -10,9 +10,22 @@ import time
 # below the === end of module statement, or 
 # externally call the module
 # note: sfr_* routines still need to be tested
-# ---- This version added SPI commands
-_mod_ver  = '0.50'	# python HKUSBIO module version
-_mod_date = '2/22/2013'	# module date
+# ---- This version adds a python class for constants
+
+class Bunch(dict):
+	def __init__(self, d = {}):
+		dict.__init__(self, d)
+		self.__dict__.update(d)
+	def __setattr__(self, name, value):
+		dict.__setitem__(self, name, value)
+		object.__setattr__(self, name, value)
+	def __setitem__(self, name, value):
+		dict.__setitem__(self, name, value)
+		object.__setattr__(self, name, value)
+	def copy(self):
+		return Bunch(dict.copy(self))
+_mod_ver  = '0.51'	# python HKUSBIO module version
+_mod_date = '2/25/2013'	# module date
 u_ad0 = 0x37	# read ADC value from RA0
 u_ad1 = 0x38	# read ADC value from RA1
 u_i2c_init = 0x40	# i2c_init(void)
