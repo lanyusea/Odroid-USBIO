@@ -13,4 +13,6 @@ sfrtest.py  - short python script for testing SFR (special function register) PI
 sfr_gpio.py - script that demonstrates using the SFR_reg commands to program and use GPIO pins
 sfr_spi.py  - script showing SPI communcation with only SFR registers used
 sfrtest.py  - shows how to access SFR registers using SFR constants
+lsm303dlhc.py - I2C communication to LSM303DLHC 3-axis accelerometer and magnetometer
+l3gd20_spi.py - SPI communication to L3GD20 3-axis gyro (update to L3G4200D)
 
