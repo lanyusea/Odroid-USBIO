@@ -7,7 +7,7 @@
 #
 # 	Note:  The demo ROM does implement its own SPI, 
 # but this demo shows SPI control just through the SFR registers
-# It also uses sfr_constants to get the PIC contants to use
+# It also uses sfr_constants to get the PIC constants to use
 
 from hk_usb_io import *
 from sfr_constants import *
