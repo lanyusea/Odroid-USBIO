@@ -12,3 +12,7 @@ pic_registers = {
 'ANSELD':0x5e,   'ANSELC':0x5d,   'ANSELB':0x5c,  'ANSELA':0x5b,   'GP_RAM1':0x52,  'GP_RAM2':0x51,  'GP_RAM3':0x50, 'GP_RAM4':0x4f,
 'SPBRG1':0xaf,
 }
+
+pic_bits = {
+'SSP1STAT_SMP':7, 'SSP1STAT_CKE':6, 'SSP1STAT_BF':0, 'SSP1CON1_WCOL':7, 'SSP1CON1_SSPOV':6, 'SSP1CON1_SSPEN':5, 'SSP1CON1_CKP':4,
+}
