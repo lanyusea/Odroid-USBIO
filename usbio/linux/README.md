@@ -12,4 +12,6 @@ HK USB IO board demo programs
 |usb_io_demo.py|Demo basic ROM functionality under python  |
 |l3gd20_spi.py|SPI - L3GD20 gyro example  |
 |lsm303dlhc.py|I2C - LSM303 accelerometer and magnetometer  |
+|sfr_pwm.py|SFR - python demo showing PWM output on RD5  |
+
 
