@@ -13,5 +13,7 @@ HK USB IO board demo programs
 |l3gd20_spi.py|SPI - L3GD20 gyro example  |
 |lsm303dlhc.py|I2C - LSM303 accelerometer and magnetometer  |
 |sfr_pwm.py|SFR - register control of PWM output on RD5  |
+|sfr_dac.py|SFR - DAC output on RA2 via SFR control  |
+
 
 

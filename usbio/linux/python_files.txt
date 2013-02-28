@@ -16,4 +16,5 @@ sfrtest.py  - shows how to access SFR registers using SFR constants
 lsm303dlhc.py - I2C communication to LSM303DLHC 3-axis accelerometer and magnetometer
 l3gd20_spi.py - SPI communication to L3GD20 3-axis gyro (update to L3G4200D)
 sfr_pwm.py - demo PWM output on RD5 using SFR registers
+sfr_dac.py - demo DAC output on RA2 using SFR registers
 
