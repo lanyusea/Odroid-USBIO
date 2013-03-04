@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # Markham Thomas  2/22/2013
 # SPI mode for L3G4200D -- Gyroscope module 3-axis 
-# Notes:  RB7=SDO, RB0=SDI, RB1=SCLK, RB5=CS
+# Notes:  RC7=SDO, RB0=SDI, RB1=SCLK, RB5=CS
 #  you can ignore return from spi_transfer until you expect data
 from hk_usb_io import *
 from ctypes import *

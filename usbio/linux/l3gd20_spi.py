@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # Markham Thomas  2/26/2013
 # SPI mode for L3GD20-- 3-axis Gyroscope module Pololu
-# Notes:  RB7=SDO, RB0=SDI, RB1=SCLK, RB5=CS
+# Notes:  RC7=SDO, RB0=SDI, RB1=SCLK, RB5=CS
 #  you can ignore return from spi_transfer until you expect data
 # Notes:  L3GD20 is an update over the L3G4200D
 from hk_usb_io import *
