@@ -16,4 +16,4 @@ lsm303dlhc.py - I2C communication to LSM303DLHC 3-axis accelerometer and magneto
 l3gd20_spi.py - SPI communication to L3GD20 3-axis gyro (update to L3G4200D)
 sfr_pwm.py - demo PWM output on RD5 using SFR registers
 sfr_dac.py - demo DAC output on RA2 using SFR registers
-
+sfr_sn47hc595.py - demo using a SN74HC595 shift register to drive 7-segment display
