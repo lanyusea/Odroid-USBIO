@@ -1,7 +1,0 @@
-This python code configures and reads the Parallax L3G4200D gyroscope module via SPI
-
-I did not convert it to radians per second or degrees per second, but there are plenty of 
-documents on the web stating how to do that.
-
-Notes on SPI:  I implemented just two SPI functions:  init and transfer
-Future options would be bulk SPI transfer and SPI shutdown (disable synchronous serial port)
