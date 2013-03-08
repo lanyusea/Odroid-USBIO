@@ -80,7 +80,6 @@ def random_str():
 	return x
 
 # initialize the registers needed for PWM output
-# RD5 pin should measure 50% of 3.3 volts
 my_pwm_init(0xc0)		# 100% duty cycle @3.750khz
 my_gpio_init()
 random.seed()
