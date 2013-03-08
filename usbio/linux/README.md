@@ -15,6 +15,8 @@ HK USB IO board demo programs
 |sfr_pwm.py|SFR - register control of PWM output on RD5  |
 |sfr_dac.py|SFR - DAC output on RA2 via SFR control  |
 |sfr_sn74hc595|SFR - demo 74HC595 shift register to 7-segment display  |
+|sfr_pwm_rgb_led.py|SFR - PWM driving a RGB LED  |
+
 
 
 
