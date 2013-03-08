@@ -71,7 +71,7 @@ def my_gpio_init():
 	sfr_set_regbit(usb, pwm.TRISE,  2, 0)	# GREEN output
 def random_toggle():
 	x = random.random()	# random float  0.0 <= x < 1.0	
-	if (x >= 0.8):		# 70% of the time be a 1
+	if (x >= 0.8):		# 20% of the time be a 1
 		return 1
 	else:
 		return 0
